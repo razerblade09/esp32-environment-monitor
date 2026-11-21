@@ -1,0 +1,16 @@
+ERC report (2026-11-21T18:50:00, Encoding UTF8)
+Report includes: Errors, Warnings, Exclusions
+
+***** Sheet /
+[pin_to_pin]: Pins of type Bidirectional and Power output are connected
+    ; warning
+    @(9800 mils, 4800 mils): Symbol U2 Pin 5 [SDO, Bidirectional, Line]
+    @(7800 mils, 2650 mils): Symbol #FLG02 Pin 1 [Power output, Line]
+
+ ** ERC messages: 1  Errors 0  Warnings 1
+
+ ** Ignored checks:
+    - Global label only appears once in the schematic
+    - Four connection points are joined together
+    - SPICE model issue
+    - Assigned footprint doesn't match footprint filters

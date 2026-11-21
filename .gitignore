@@ -1,0 +1,59 @@
+# ============================================================
+# KiCad
+# ============================================================
+# Autosave / backup files
+*.kicad_sch-bak
+*.kicad_pcb-bak
+*.kicad_pro-bak
+*.bak
+*.tmp
+*-backups/
+*_autosave-*
+
+# KiCad cached library tables
+fp-lib-table
+sym-lib-table
+
+# KiCad local settings (machine-specific)
+*.kicad_prl
+
+# ============================================================
+# KiCad file history (VSCode KiCad extension artefacts)
+# ============================================================
+.history/
+
+# ============================================================
+# Operating System
+# ============================================================
+# Windows
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ============================================================
+# Editors
+# ============================================================
+# VSCode
+.vscode/
+
+# JetBrains
+.idea/
+
+# ============================================================
+# Firmware / PlatformIO (future)
+# ============================================================
+firmware/.pio/
+firmware/.pioenvs/
+firmware/.piolibdeps/
+firmware/build/
+
+# ============================================================
+# Manufacturing outputs — keep gerbers/ tracked, but ignore
+# intermediate zip archives if generated locally
+# ============================================================
+*.zip

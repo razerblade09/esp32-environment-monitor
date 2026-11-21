@@ -1,0 +1,334 @@
+# ESP32 Environmental Monitor
+## Project Documentation & AI Handoff
+**Checkpoint:** November 21, 2026  
+**Current Phase:** Schematic completed; preparing for PCB design  
+**Schematic Status:** ERC passed — 0 errors, 0 warnings  
+**PCB Status:** Not started
+
+---
+
+# 1. Project Overview
+
+The project is an ESP32-based environmental monitoring device designed to measure and display multiple environmental parameters using dedicated sensors.
+
+The system uses an ESP32-WROOM-32 bare module as its main microcontroller. It collects data from particulate matter, VOC, temperature, humidity, pressure, and CO₂ sensors.
+
+The collected measurements will eventually be processed by the ESP32 and displayed through an OLED interface.
+
+The goal is to develop a custom electronic device, beginning with a complete schematic in KiCad and progressing toward a manufacturable PCB.
+
+## 2. System Components
+
+| Component | Purpose |
+|---|---|
+| ESP32-WROOM-32 | Main microcontroller |
+| PMS5003 | Particulate matter measurement |
+| SGP40 | VOC measurement |
+| BME280 | Temperature, humidity, and pressure |
+| SCD40 | CO₂ measurement |
+| SSD1306 OLED | Measurement display |
+| AMS1117-3.3 | 3.3V voltage regulation |
+| USB-UART header | ESP32 programming and serial communication |
+
+Power source: External 5V input.
+
+## 3. System Communication Architecture
+
+The system uses two communication interfaces.
+
+### I²C Communication
+
+The following devices share the same I²C bus:
+
+- SGP40
+- BME280
+- SCD40
+- SSD1306 OLED
+
+ESP32 connections:
+
+| ESP32 GPIO | Signal |
+|---|---|
+| GPIO21 | I2C_SDA |
+| GPIO22 | I2C_SCL |
+
+BME280 address selection:
+- SDO connected to GND.
+- Intended I²C address: 0x76.
+
+### UART Communication
+
+The PMS5003 communicates with the ESP32 using UART2.
+
+| Device | Connection |
+|---|---|
+| PMS5003 TX | ESP32 GPIO16 |
+| PMS5003 RX | ESP32 GPIO17 |
+
+Net labels:
+- PMS_RX
+- PMS_TX
+
+Note: These labels represent the ESP32-side signal names. GPIO16 receives PMS5003 TX, while GPIO17 transmits to PMS5003 RX.
+
+## 4. Schematic Connections
+
+### 4.1 ESP32-WROOM-32
+
+The project uses the bare ESP32-WROOM-32 module, not an ESP32 development board.
+
+Power:
+- VDD → +3V3
+- GND → GND
+
+Boot and reset:
+- EN → 10kΩ pull-up to +3V3
+- GPIO0 → 10kΩ pull-up to +3V3
+- RESET pushbutton connects EN to GND
+- BOOT pushbutton connects GPIO0 to GND
+
+Decoupling:
+- 100nF capacitor between +3V3 and GND
+- 10µF capacitor between +3V3 and GND
+
+Communication:
+- GPIO21 → I2C_SDA
+- GPIO22 → I2C_SCL
+- GPIO16 → PMS_RX
+- GPIO17 → PMS_TX
+
+GPIO2 is marked as not connected.
+
+### 4.2 PMS5003
+
+Custom KiCad symbol created.
+
+| Pin | Name | Connection |
+|---|---|---|
+| 1 | VCC | +5V |
+| 2 | GND | GND |
+| 3 | SET | Marked NC |
+| 4 | RX | PMS_TX |
+| 5 | TX | PMS_RX |
+| 6 | RESET | Marked NC |
+| 7 | NC | Not connected |
+| 8 | NC | Not connected |
+
+Important: SET and RESET were left unconnected based on earlier design guidance. Verify their required operating states against the exact PMS5003 module datasheet before PCB fabrication.
+
+### 4.3 SGP40
+
+Custom KiCad symbol created.
+
+| Pin | Name | Connection |
+|---|---|---|
+| 1 | VDD | +3V3 |
+| 2 | GND | GND |
+| 3 | SDA | I2C_SDA |
+| 4 | SCL | I2C_SCL |
+
+### 4.4 SSD1306 OLED
+
+Custom KiCad symbol created.
+
+| Pin | Name | Connection |
+|---|---|---|
+| 1 | GND | GND |
+| 2 | VCC | +3V3 |
+| 3 | SCL | I2C_SCL |
+| 4 | SDA | I2C_SDA |
+
+The symbol represents the OLED module's four-pin interface. Its actual connector and physical dimensions must be confirmed before footprint assignment.
+
+### 4.5 BME280
+
+| Pin | Name | Connection |
+|---|---|---|
+| 1 | GND | GND |
+| 2 | CSB | +3V3 |
+| 3 | SDI | I2C_SDA |
+| 4 | SCK | I2C_SCL |
+| 5 | SDO | GND |
+| 6 | VDDIO | +3V3 |
+| 7 | GND | GND |
+| 8 | VDD | +3V3 |
+
+The design uses I²C communication with the intended address 0x76.
+
+### 4.6 SCD40
+
+| Pin | Name | Connection |
+|---|---|---|
+| 7 | VDD | +3V3 |
+| 6 | GND | GND |
+| 10 | SDA | I2C_SDA |
+| 9 | SCL | I2C_SCL |
+
+Other pins must be checked against the exact SCD40 symbol and datasheet. Do not assume unused pins can all be left floating.
+
+Note: The component was identified as U4 in the project discussion, while an earlier ERC report referenced U3. Confirm the actual reference designator in the current schematic.
+
+## 5. Power Supply Design
+
+The current schematic contains an AMS1117-3.3 regulator.
+
+Connections:
+
+| Regulator Pin | Connection |
+|---|---|
+| VIN (Pin 3) | +5V |
+| GND (Pin 1) | GND |
+| VOUT (Pin 2) | +3V3 |
+
+Capacitors:
+- C1: 10µF between +5V and GND.
+- C2: 10µF between +3V3 and GND.
+
+PWR_FLAG symbols were added to resolve KiCad power ERC checks.
+
+### Important Engineering Review
+
+The AMS1117-3.3 has not yet been validated for the complete system's current requirements.
+
+Before PCB fabrication:
+1. Calculate the total current consumption.
+2. Account for ESP32 Wi-Fi transmission current peaks.
+3. Check the regulator's dropout voltage.
+4. Calculate regulator power dissipation and temperature.
+5. Confirm that the selected regulator and PCB copper area can safely handle the load.
+
+Do not assume the AMS1117 is adequate simply because the schematic passes ERC.
+
+## 6. ESP32 Programming Interface
+
+A four-pin USB-UART programming header was included.
+
+| Header Pin | Connection |
+|---|---|
+| 1 | GND |
+| 2 | GPIO3 / U0RXD |
+| 3 | GPIO1 / U0TXD |
+| 4 | No Connect |
+
+The programming interface requires a USB-UART adapter with 3.3V logic levels.
+
+The external adapter's power output must not be connected to the board's power supply through this header.
+
+## 7. KiCad Work Completed
+
+The following tasks have been completed:
+
+- Created the KiCad schematic.
+- Created custom symbols for the PMS5003, SGP40, and SSD1306 OLED.
+- Added the ESP32-WROOM-32.
+- Added the BME280 and SCD40.
+- Connected the sensor power and communication signals.
+- Established shared I²C communication nets.
+- Established PMS5003 UART communication nets.
+- Added ESP32 boot and reset circuitry.
+- Added decoupling capacitors.
+- Added the AMS1117-3.3 power supply circuit.
+- Added the USB-UART programming header.
+- Resolved the reported electrical rule check errors.
+- Ran the final Electrical Rules Checker.
+
+### Final ERC Result
+
+**0 Errors, 0 Warnings**
+
+The current schematic passes KiCad ERC.
+
+This confirms that the configured electrical rules have no remaining reported violations. It does not independently verify electrical correctness, component compatibility, or manufacturability.
+
+## 8. Current Project Checkpoint
+
+<PRIVATE_CHECKPOINT>
+
+**Completed:** Schematic design and ERC validation.
+
+**Current task:** Assigning component footprints.
+
+The KiCad Footprint Assignment Tool has not yet been completed. The next action is to open:
+
+`Tools → Assign Footprints`
+
+No footprints have been finalized or assigned as part of this checkpoint.
+
+No PCB layout has been started.
+
+## 9. Remaining Development Roadmap
+
+Follow this sequence:
+
+### Phase 1 — Footprint Assignment
+1. Identify the exact physical package of each component.
+2. Assign appropriate KiCad footprints.
+3. Verify pin numbering against component datasheets.
+4. Verify connectors and module dimensions.
+5. Check footprint orientation and mounting requirements.
+
+### Phase 2 — Schematic Engineering Review
+1. Verify PMS5003 SET and RESET operating states.
+2. Verify SCD40 unused pin requirements.
+3. Check I²C pull-up requirements and voltage compatibility.
+4. Review ESP32 boot and reset circuitry.
+5. Validate the 5V and 3.3V power budget.
+6. Review regulator thermal performance.
+7. Verify decoupling and connector requirements.
+
+### Phase 3 — PCB Layout
+1. Update PCB from schematic.
+2. Define board dimensions and shape.
+3. Arrange the ESP32, sensors, connectors, and power circuitry.
+4. Establish placement constraints and antenna clearance.
+5. Route power and ground connections.
+6. Route I²C and UART signals.
+7. Add ground planes.
+8. Run PCB Design Rules Check (DRC).
+
+### Phase 4 — Manufacturing Preparation
+1. Verify component footprints and physical dimensions.
+2. Review silkscreen labels.
+3. Generate Gerber files.
+4. Generate drill files.
+5. Generate BOM and pick-and-place files if required.
+6. Review manufacturing outputs before ordering.
+
+### Phase 5 — Hardware Bring-up
+1. Inspect the manufactured PCB.
+2. Check for short circuits.
+3. Verify 5V and 3.3V rails.
+4. Test ESP32 programming.
+5. Test each sensor individually.
+6. Test the complete I²C bus.
+7. Test PMS5003 UART communication.
+8. Validate sensor readings.
+
+## 10. Instructions for Another AI
+
+You are assisting with an ongoing electronics engineering project.
+
+Follow these instructions:
+
+1. Continue from the existing schematic and project checkpoint.
+2. Do not redesign the circuit unless explicitly requested.
+3. Do not change existing GPIO assignments or net names without asking.
+4. Do not invent component specifications, pinouts, or footprints.
+5. Verify component datasheets when physical package or electrical requirements are uncertain.
+6. Explain KiCad operations using exact menu names, buttons, and actions.
+7. Give one step at a time and wait for confirmation before proceeding.
+8. Do not jump ahead to PCB routing while footprint assignments and schematic verification remain incomplete.
+9. Distinguish between an ERC-clean schematic and a fully electrically validated design.
+10. Preserve the existing design and document any proposed modifications before implementing them.
+
+The user is a beginner in embedded systems and PCB design. Provide clear, practical explanations without unnecessarily overwhelming them.
+
+### Immediate Instruction
+
+Start by guiding the user through KiCad's Footprint Assignment Tool.
+
+The first task is to identify and assign the correct physical footprints for the existing schematic components. Do not proceed to PCB placement until this is complete.
+
+---
+
+**End of Project Documentation**
