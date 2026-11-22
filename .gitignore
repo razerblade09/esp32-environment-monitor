@@ -57,3 +57,7 @@ firmware/build/
 # intermediate zip archives if generated locally
 # ============================================================
 *.zip
+
+# ESP-IDF generated configuration (derived from sdkconfig.defaults)
+firmware/sdkconfig.*
+!firmware/sdkconfig.defaults
