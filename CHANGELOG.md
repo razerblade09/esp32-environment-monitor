@@ -11,8 +11,9 @@ All notable changes to this project are documented here.
 - J2 (5V_IN) power input connector
 - R3/R4 4.7 kΩ I²C pull-ups on SDA/SCL
 - C5 1 µF on SGP40 VDDH
-- Firmware skeleton: PlatformIO + ESP-IDF project, board pin map, shared I2C bus component with boot-time device scan
-- CI workflow: clang-format check and firmware build
+- Firmware skeleton: ESP-IDF project, board pin map, shared I2C bus component with boot-time device scan
+- `firmware/build.sh` (builds a single flashable image in `dist/`) and `firmware/flash.sh`
+- CI workflow: clang-format check and ESP-IDF firmware build
 - CONTRIBUTING.md with branch and commit conventions, EditorConfig
 
 ### Changed

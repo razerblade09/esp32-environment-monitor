@@ -36,9 +36,11 @@ Rules of thumb:
 
 ## Firmware checks
 
+From an ESP-IDF terminal:
+
 ```
-pio run -d firmware                      # build
-clang-format -i --style=file:firmware/.clang-format <files>
+./firmware/build.sh                                          # build
+clang-format -i --style=file:firmware/.clang-format <files>   # format
 ```
 
-CI runs the same build and a formatting check on every pull request.
+CI runs the same `build.sh` in the ESP-IDF container, plus a formatting check, on every pull request.

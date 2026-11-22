@@ -4,29 +4,33 @@
 
 ## Toolchain
 
-[PlatformIO](https://platformio.org/) with the [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/) framework, targeting the bare ESP32-WROOM-32 module.
+[ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/) v5.3.x, edited in VS Code with the Espressif *ESP-IDF* extension. The extension installs the toolchain and provides a terminal with the environment already set up.
 
 ```
-pio run -d firmware                  # build
-pio run -d firmware -t upload        # flash over the J1 USB-UART header
-pio device monitor -d firmware       # serial console, 115200 baud
+./build.sh                  # build; output: firmware/dist/esp32_environment_monitor.bin
+./flash.sh /dev/ttyUSB0     # write that image to the ESP32 at offset 0x0
+idf.py monitor              # serial console, 115200 baud
 ```
 
-Flashing needs a 3.3 V USB-UART adapter on header J1 with GPIO0 held low (BOOT button) while resetting. See the top-level README for the header pinout.
+Run these from an ESP-IDF terminal (`idf.py` must be on `PATH`). `build.sh` produces a single merged image (bootloader + partition table + app), so that one file is all you upload.
+
+Flashing needs a 3.3 V USB-UART adapter on header J1. Enter download mode by holding BOOT, tapping RESET, then releasing BOOT. See the top-level README for the header pinout.
 
 ## Layout
 
 ```
 firmware/
-├── platformio.ini        # build configuration
-├── sdkconfig.defaults    # ESP-IDF project settings
-├── src/                  # app_main: wires components together
+├── build.sh              # build + merge into dist/
+├── flash.sh              # upload dist/ image with esptool
+├── CMakeLists.txt        # ESP-IDF project
+├── sdkconfig.defaults    # project settings (generated sdkconfig is not tracked)
+├── main/                 # app_main: wires components together
 └── components/
     ├── board/            # GPIO map and I2C addresses (mirrors the schematic)
     └── i2c_bus/          # shared I2C master bus + address probe
 ```
 
-Rule: hardware access lives in components; `src/` only orchestrates.
+Rule: hardware access lives in components; `main/` only orchestrates.
 
 ## Roadmap
 
