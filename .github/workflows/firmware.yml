@@ -20,16 +20,17 @@ jobs:
             $(git ls-files 'firmware/*.c' 'firmware/*.h')
 
   build:
-    name: Build (esp32dev)
+    name: Build (ESP-IDF v5.3.1)
     runs-on: ubuntu-latest
+    container: espressif/idf:v5.3.1
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Build
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          ./firmware/build.sh
+      - uses: actions/upload-artifact@v4
         with:
-          python-version: "3.12"
-      - uses: actions/cache@v4
-        with:
-          path: ~/.platformio
-          key: pio-${{ hashFiles('firmware/platformio.ini') }}
-      - run: pip install platformio
-      - run: pio run -d firmware
+          name: esp32_environment_monitor
+          path: firmware/dist/esp32_environment_monitor.bin
