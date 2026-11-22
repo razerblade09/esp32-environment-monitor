@@ -45,12 +45,12 @@ $RECYCLE.BIN/
 .idea/
 
 # ============================================================
-# Firmware / PlatformIO (future)
+# Firmware / ESP-IDF
 # ============================================================
-firmware/.pio/
-firmware/.pioenvs/
-firmware/.piolibdeps/
 firmware/build/
+firmware/dist/
+firmware/managed_components/
+firmware/dependencies.lock
 
 # ============================================================
 # Manufacturing outputs — keep gerbers/ tracked, but ignore
@@ -59,5 +59,6 @@ firmware/build/
 *.zip
 
 # ESP-IDF generated configuration (derived from sdkconfig.defaults)
+firmware/sdkconfig
 firmware/sdkconfig.*
 !firmware/sdkconfig.defaults
