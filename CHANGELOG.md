@@ -6,8 +6,22 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added
+- Firmware interface summary: `docs/FIRMWARE_INTERFACE.md`
+- J2 (5V_IN) power input connector
+- R3/R4 4.7 kΩ I²C pull-ups on SDA/SCL
+- C5 1 µF on SGP40 VDDH
+
+### Changed
+- SGP40 symbol reworked to the real 6-pin pinout (VDDH to +3V3, pin 4 to GND); reference is now U5
+- Sensors are bare chips assembled by JLCPCB; PMS5003 and OLED connect via connectors
+- C2 decided as 22 µF tantalum (AMS1117 output capacitor requirement)
+- J1 pin 4 is No Connect
+- README and Handover.txt synced with the schematic (SCD40 U3, PMS5003 U4, SGP40 U5)
+
 ### In Progress
-- Footprint assignment for all schematic components
+- Footprint assignment: all parts assigned except U5 (SGP40, JLCPCB C2874215, footprint to import)
+- Set the C2 value field to 22uF in the schematic
 
 ---
 

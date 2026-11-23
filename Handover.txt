@@ -1,8 +1,8 @@
 # ESP32 Environmental Monitor
 ## Project Documentation & AI Handoff
-**Checkpoint:** November 21, 2026  
+**Checkpoint:** November 23, 2026 (updated; originally November 21)  
 **Current Phase:** Schematic completed; preparing for PCB design  
-**Schematic Status:** ERC passed — 0 errors, 0 warnings  
+**Schematic Status:** ERC: 0 errors, 1 known benign warning (BME280 SDO / PWR_FLAG pin_to_pin)  
 **PCB Status:** Not started
 
 ---
@@ -116,16 +116,20 @@ Custom KiCad symbol created.
 
 Important: SET and RESET were left unconnected based on earlier design guidance. Verify their required operating states against the exact PMS5003 module datasheet before PCB fabrication.
 
-### 4.3 SGP40
+### 4.3 SGP40 (U5)
 
-Custom KiCad symbol created.
+Custom KiCad symbol, bare 6-pin DFN chip (JLCPCB C2874215), I²C address 0x59.
 
 | Pin | Name | Connection |
 |---|---|---|
 | 1 | VDD | +3V3 |
 | 2 | GND | GND |
 | 3 | SDA | I2C_SDA |
-| 4 | SCL | I2C_SCL |
+| 4 | GND2 | GND |
+| 5 | VDDH | +3V3 (C5 1µF to GND) |
+| 6 | SCL | I2C_SCL |
+
+This replaces the original 4-pin symbol, which put SCL on a pin that must be grounded.
 
 ### 4.4 SSD1306 OLED
 
@@ -166,7 +170,7 @@ The design uses I²C communication with the intended address 0x76.
 
 Other pins must be checked against the exact SCD40 symbol and datasheet. Do not assume unused pins can all be left floating.
 
-Note: The component was identified as U4 in the project discussion, while an earlier ERC report referenced U3. Confirm the actual reference designator in the current schematic.
+Note: The SCD40 is U3 in the schematic. Final designators: U1 ESP32, U2 BME280, U3 SCD40, U4 PMS5003, U5 SGP40, U6 OLED, U7 AMS1117.
 
 ## 5. Power Supply Design
 
@@ -182,7 +186,8 @@ Connections:
 
 Capacitors:
 - C1: 10µF between +5V and GND.
-- C2: 10µF between +3V3 and GND.
+- C2: 22µF tantalum between +3V3 and GND (AMS1117 output capacitor requirement; set the value field in the schematic).
+- C5: 1µF on SGP40 VDDH. Input connector J2 (5V_IN). I²C pull-ups R3/R4 4.7kΩ to +3V3.
 
 PWR_FLAG symbols were added to resolve KiCad power ERC checks.
 
