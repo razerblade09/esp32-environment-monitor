@@ -16,6 +16,8 @@ Run these from an ESP-IDF terminal (`idf.py` must be on `PATH`). `build.sh` prod
 
 Flashing needs a 3.3 V USB-UART adapter on header J1. Enter download mode by holding BOOT, tapping RESET, then releasing BOOT. See the top-level README for the header pinout.
 
+Pin map, I2C addresses and open hardware questions: [`docs/FIRMWARE_INTERFACE.md`](../docs/FIRMWARE_INTERFACE.md).
+
 ## Layout
 
 ```
