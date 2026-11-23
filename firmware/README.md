@@ -1,16 +1,46 @@
 # Firmware
 
-**Status: Not started.**
+**Status: In development.** Bring-up skeleton in place; sensor drivers are added one per pull request.
 
-ESP32 firmware development begins after hardware bring-up.
+## Toolchain
 
-## Planned Features
+[ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/) v5.3.x, edited in VS Code with the Espressif *ESP-IDF* extension. The extension installs the toolchain and provides a terminal with the environment already set up.
 
-- I²C sensor polling: BME280, SGP40, SCD40, SSD1306
-- UART2 reading of PMS5003 data frames
-- SSD1306 OLED display rendering
-- (Optional) Wi-Fi telemetry / MQTT
+```
+./build.sh                  # build; output: firmware/dist/esp32_environment_monitor.bin
+./flash.sh /dev/ttyUSB0     # write that image to the ESP32 at offset 0x0
+idf.py monitor              # serial console, 115200 baud
+```
 
-## Recommended Toolchain
+Run these from an ESP-IDF terminal (`idf.py` must be on `PATH`). `build.sh` produces a single merged image (bootloader + partition table + app), so that one file is all you upload.
 
-- [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/) or [PlatformIO](https://platformio.org/) with the Arduino ESP32 core
+Flashing needs a 3.3 V USB-UART adapter on header J1. Enter download mode by holding BOOT, tapping RESET, then releasing BOOT. See the top-level README for the header pinout.
+
+Pin map, I2C addresses and open hardware questions: [`docs/FIRMWARE_INTERFACE.md`](../docs/FIRMWARE_INTERFACE.md).
+
+## Layout
+
+```
+firmware/
+├── build.sh              # build + merge into dist/
+├── flash.sh              # upload dist/ image with esptool
+├── CMakeLists.txt        # ESP-IDF project
+├── sdkconfig.defaults    # project settings (generated sdkconfig is not tracked)
+├── main/                 # app_main: wires components together
+└── components/
+    ├── board/            # GPIO map and I2C addresses (mirrors the schematic)
+    └── i2c_bus/          # shared I2C master bus + address probe
+```
+
+Rule: hardware access lives in components; `main/` only orchestrates.
+
+## Roadmap
+
+- [x] Project skeleton, pin map, I2C bus with boot-time device scan
+- [ ] BME280 driver (temperature, humidity, pressure)
+- [ ] SCD40 driver (CO2)
+- [ ] SGP40 driver (VOC)
+- [ ] PMS5003 UART frame parser
+- [ ] SSD1306 display output
+- [ ] Main sampling loop
+- [ ] (Optional) Wi-Fi telemetry / MQTT
