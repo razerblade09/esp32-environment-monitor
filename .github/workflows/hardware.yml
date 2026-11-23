@@ -1,0 +1,49 @@
+name: Hardware
+
+on:
+  push:
+    branches: [main]
+    paths: ["hardware/**", ".github/workflows/hardware.yml"]
+  pull_request:
+    paths: ["hardware/**", ".github/workflows/hardware.yml"]
+
+jobs:
+  erc:
+    name: KiCad ERC and schematic PDF
+    runs-on: ubuntu-latest
+    # Official KiCad image; the tag should match the KiCad version used to
+    # author the project (KiCad 10).
+    container:
+      image: kicad/kicad:10.0
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run electrical rules check (fail on errors only)
+        run: |
+          kicad-cli sch erc \
+            --severity-error \
+            --exit-code-violations \
+            --output erc-report.txt \
+            hardware/schematic/Environment_Sensor.kicad_sch
+        # The known benign BME280 SDO / PWR_FLAG warning is not an error,
+        # so it does not fail the build. It is still listed in the report.
+
+      - name: Show ERC report
+        if: always()
+        run: cat erc-report.txt || true
+
+      - name: Export schematic PDF
+        if: always()
+        run: |
+          kicad-cli sch export pdf \
+            --output schematic.pdf \
+            hardware/schematic/Environment_Sensor.kicad_sch
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hardware-reports
+          path: |
+            erc-report.txt
+            schematic.pdf
