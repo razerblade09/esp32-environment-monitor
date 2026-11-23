@@ -2,7 +2,7 @@
 
 An ESP32-based custom PCB that measures and displays multiple environmental parameters — particulate matter, VOC, CO₂, temperature, humidity, and pressure — using dedicated sensors.
 
-> **Status:** Schematic complete (ERC: 1 known benign warning) · Footprint assignment in progress · PCB layout not started
+> **Status:** Schematic complete (ERC: 1 known benign warning) · Footprint assignment in progress (SGP40 footprint pending) · PCB layout not started
 
 ---
 
@@ -36,12 +36,15 @@ This project designs a compact, custom PCB environmental monitor using the **ESP
 |---|---|---|
 | U1 | ESP32-WROOM-32 | Main microcontroller |
 | U2 | BME280 | Temperature, humidity, and pressure |
-| U3 | SGP40 | VOC (Volatile Organic Compound) measurement |
-| U4 | SCD40 | CO₂ measurement |
-| U5 | PMS5003 | Particulate matter (PM1.0, PM2.5, PM10) |
-| U6 | SSD1306 | 128×64 OLED display |
+| U3 | SCD40-D-R2 | CO₂ measurement |
+| U4 | PMS5003 | Particulate matter (PM1.0, PM2.5, PM10), 8-pin connector |
+| U5 | SGP40 | VOC (Volatile Organic Compound) measurement, bare 6-pin DFN |
+| U6 | SSD1306 | 128×64 OLED display, 4-pin module |
 | U7 | AMS1117-3.3 | 3.3V LDO voltage regulator |
 | J1 | USB-UART Header | Programming and serial communication |
+| J2 | 5V_IN Header | External 5V power input |
+
+The board is assembled by JLCPCB. BME280, SCD40 and SGP40 are bare chips on the PCB; the PMS5003 (with its own cable) and the OLED connect through connectors.
 
 ---
 
@@ -54,7 +57,9 @@ This project designs a compact, custom PCB environmental monitor using the **ESP
 | SGP40 | 0x59 | Fixed |
 | BME280 | 0x76 | SDO → GND |
 | SCD40 | 0x62 | Fixed |
-| SSD1306 | 0x3C | Typical module default |
+| SSD1306 | 0x3C | Typical module default; depends on the module |
+
+Pull-ups: R3 (SDA) and R4 (SCL), 4.7 kΩ each to +3V3.
 
 #### UART2 — PMS5003 (Particulate Matter)
 
@@ -62,6 +67,10 @@ This project designs a compact, custom PCB environmental monitor using the **ESP
 |---|---|---|
 | GPIO16 (PMS_RX) | ← Receive | TX |
 | GPIO17 (PMS_TX) | → Transmit | RX |
+
+PMS5003 SET and RESET are left unconnected (floating = normal operation per the Plantower manual), so firmware cannot sleep or reset the sensor.
+
+Full pin-level detail is in [`docs/FIRMWARE_INTERFACE.md`](docs/FIRMWARE_INTERFACE.md).
 
 ---
 
@@ -76,6 +85,8 @@ An exported PDF of the schematic is available at [`docs/images/Environment_Senso
 - SGP40
 - SSD1306 OLED (4-pin module interface)
 
+The SGP40 symbol uses the real 6-pin pinout (pin 5 VDDH to +3V3 with C5, pin 4 to GND).
+
 ---
 
 ### Power Supply
@@ -87,9 +98,12 @@ An exported PDF of the schematic is available at [`docs/images/Environment_Senso
 
 **Decoupling capacitors:**
 - C1: 10 µF — +5V rail (AMS1117 input)
-- C2: 10 µF — +3V3 rail (AMS1117 output)
+- C2: 22 µF tantalum — +3V3 rail (AMS1117 output; the AMS1117 needs an output cap with ESR in its stable window, so no plain ceramic)
 - C3: 100 nF — ESP32 VDD local decoupling
 - C4: 10 µF — ESP32 VDD bulk decoupling
+- C5: 1 µF — SGP40 VDDH
+
+The 5V input is connector J2 (pin 1 +5V, pin 2 GND).
 
 > ⚠️ **Power budget validation is pending.** The AMS1117-3.3 must be validated against total system current draw (including ESP32 Wi-Fi peaks) before PCB fabrication. See [Known Issues](#known-issues--notes).
 
@@ -164,7 +178,7 @@ The ERC reports 1 warning:
 
 ### PMS5003 SET and RESET Pins
 
-The PMS5003 SET and RESET pins are currently left unconnected. Verify their required operating states against the PMS5003 datasheet before footprint assignment and PCB fabrication.
+SET and RESET are intentionally left unconnected. Per the Plantower manual, SET high or floating is normal operation and RESET is active low, so floating is acceptable. Re-check against the exact module's datasheet before ordering.
 
 ---
 

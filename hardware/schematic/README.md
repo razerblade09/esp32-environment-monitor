@@ -18,4 +18,4 @@ See [Known Issues](../../README.md#known-issues--notes) in the main README for d
 
 ## Opening in KiCad
 
-Open `Environment_Sensor.kicad_pro` with **KiCad 7** or later.
+Open `Environment_Sensor.kicad_pro` with **KiCad 10** (the version used to create it).
