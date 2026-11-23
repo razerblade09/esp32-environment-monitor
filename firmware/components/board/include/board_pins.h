@@ -2,8 +2,9 @@
  * @file board_pins.h
  * @brief GPIO assignments for the ESP32 Environmental Monitor PCB.
  *
- * Single source of truth for pin usage in firmware. Must mirror the net
- * names and GPIOs in hardware/schematic/Environment_Sensor.kicad_sch.
+ * Single source of truth for pin usage in firmware. Must mirror the GPIOs
+ * in hardware/schematic/Environment_Sensor.kicad_sch; see also
+ * docs/FIRMWARE_INTERFACE.md.
  * Do not change a value here without changing the schematic first.
  */
 #pragma once

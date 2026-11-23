@@ -20,7 +20,7 @@ esp_err_t i2c_bus_init(void)
         .scl_io_num = BOARD_I2C_SCL_GPIO,
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .glitch_ignore_cnt = 7,
-        /* Internal pull-ups are a fallback only; fit external pull-ups on the PCB. */
+        /* External 4.7k pull-ups R3/R4 are on the PCB; internal ones are a fallback. */
         .flags.enable_internal_pullup = true,
     };
 
