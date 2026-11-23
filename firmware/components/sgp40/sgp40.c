@@ -19,12 +19,15 @@
 static const char *TAG = "sgp40";
 
 /* Commands (big-endian 16-bit) */
-#define CMD_MEASURE_RAW   0x2600  /* measure_raw_signal                    */
-#define CMD_SELF_TEST     0x280E  /* execute_self_test (~320 ms)            */
-#define CMD_HEATER_OFF    0x3615  /* turn_heater_off (saves power)          */
+#define CMD_MEASURE_RAW 0x2600 /* measure_raw_signal          */
+#define CMD_SELF_TEST   0x280E /* execute_self_test (~320 ms) */
 
-#define SELF_TEST_OK      0xD400  /* expected result word if test passes    */
-#define I2C_TIMEOUT_MS    50
+#define SELF_TEST_OK   0xD400 /* expected result if test passes */
+#define I2C_TIMEOUT_MS 50
+
+/* Max words returned by any SGP40 response (self-test = 1 word) */
+#define MAX_RESPONSE_WORDS 1
+#define BYTES_PER_WORD     3 /* data[2] + crc[1] */
 
 static i2c_master_dev_handle_t s_dev = NULL;
 
@@ -35,7 +38,7 @@ static uint8_t crc8(const uint8_t *data, size_t len)
     for (size_t i = 0; i < len; i++) {
         crc ^= data[i];
         for (int b = 0; b < 8; b++) {
-            crc = (crc & 0x80) ? (crc << 1) ^ 0x31 : (crc << 1);
+            crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0x31) : (uint8_t)(crc << 1);
         }
     }
     return crc;
@@ -44,32 +47,31 @@ static uint8_t crc8(const uint8_t *data, size_t len)
 /* ── Send a 2-byte command ───────────────────────────────────────────────── */
 static esp_err_t send_cmd(uint16_t cmd)
 {
-    uint8_t buf[2] = {cmd >> 8, cmd & 0xFF};
+    uint8_t buf[2] = {(uint8_t)(cmd >> 8), (uint8_t)(cmd & 0xFF)};
     return i2c_master_transmit(s_dev, buf, sizeof(buf), I2C_TIMEOUT_MS);
 }
 
-/* ── Send a 2-byte command + one data word with CRC ─────────────────────── */
-static esp_err_t send_cmd_word(uint16_t cmd, uint16_t word)
-{
-    uint8_t w[2] = {word >> 8, word & 0xFF};
-    uint8_t buf[5] = {cmd >> 8, cmd & 0xFF, w[0], w[1], crc8(w, 2)};
-    return i2c_master_transmit(s_dev, buf, sizeof(buf), I2C_TIMEOUT_MS);
-}
-
-/* ── Read n response words (each word + CRC) ────────────────────────────── */
+/* ── Read n response words (each word[2] + crc[1]) ──────────────────────── */
 static esp_err_t read_words(uint16_t *words, size_t n)
 {
-    size_t  bytes = n * 3;
-    uint8_t buf[bytes];
-    esp_err_t err = i2c_master_receive(s_dev, buf, bytes, I2C_TIMEOUT_MS);
-    if (err != ESP_OK) return err;
+    /* Fixed-size buffer: largest SGP40 response is 1 word = 3 bytes */
+    uint8_t buf[MAX_RESPONSE_WORDS * BYTES_PER_WORD];
+
+    if (n > MAX_RESPONSE_WORDS) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t err = i2c_master_receive(s_dev, buf, n * BYTES_PER_WORD, I2C_TIMEOUT_MS);
+    if (err != ESP_OK) {
+        return err;
+    }
 
     for (size_t i = 0; i < n; i++) {
-        uint8_t *w = &buf[i * 3];
+        uint8_t *w = &buf[i * BYTES_PER_WORD];
         uint8_t expected = crc8(w, 2);
         if (w[2] != expected) {
-            ESP_LOGE(TAG, "CRC error on word %u (got 0x%02X, expected 0x%02X)",
-                     (unsigned)i, w[2], expected);
+            ESP_LOGE(TAG, "CRC error on word %u (got 0x%02X, expected 0x%02X)", (unsigned)i,
+                     w[2], expected);
             return ESP_ERR_INVALID_CRC;
         }
         words[i] = (uint16_t)(w[0] << 8 | w[1]);
@@ -78,12 +80,14 @@ static esp_err_t read_words(uint16_t *words, size_t n)
 }
 
 /* ── Humidity-compensation encoding ─────────────────────────────────────── */
-/* SGP40 expects RH and T as ticks: RH_ticks = RH% / 100 * 65535          */
-/*                                  T_ticks  = (T_C + 45) / 175 * 65535   */
+/* SGP40 expects: RH_ticks = RH% / 100 * 65535                             */
+/*                T_ticks  = (T_C + 45) / 175 * 65535                      */
 static uint16_t encode_rh(float rh_pct)
 {
-    if (rh_pct < 0.0f)   rh_pct = 0.0f;
-    if (rh_pct > 100.0f) rh_pct = 100.0f;
+    if (rh_pct < 0.0f)
+        rh_pct = 0.0f;
+    if (rh_pct > 100.0f)
+        rh_pct = 100.0f;
     return (uint16_t)(rh_pct / 100.0f * 65535.0f + 0.5f);
 }
 
@@ -96,12 +100,14 @@ static uint16_t encode_temp(float temp_c)
 
 esp_err_t sgp40_init(void)
 {
-    if (s_dev != NULL) return ESP_ERR_INVALID_STATE;
+    if (s_dev != NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
 
     const i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address  = BOARD_I2C_ADDR_SGP40,
-        .scl_speed_hz    = 400000,
+        .device_address = BOARD_I2C_ADDR_SGP40,
+        .scl_speed_hz = 400000,
     };
     esp_err_t err = i2c_master_bus_add_device(i2c_bus_get(), &dev_cfg, &s_dev);
     if (err != ESP_OK) {
@@ -111,12 +117,16 @@ esp_err_t sgp40_init(void)
 
     /* Run self-test (~320 ms) */
     err = send_cmd(CMD_SELF_TEST);
-    if (err != ESP_OK) goto fail;
+    if (err != ESP_OK) {
+        goto fail;
+    }
     vTaskDelay(pdMS_TO_TICKS(320));
 
     uint16_t result;
     err = read_words(&result, 1);
-    if (err != ESP_OK) goto fail;
+    if (err != ESP_OK) {
+        goto fail;
+    }
 
     if (result != SELF_TEST_OK) {
         ESP_LOGE(TAG, "self-test failed (result 0x%04X)", result);
@@ -135,30 +145,37 @@ fail:
 
 esp_err_t sgp40_measure_raw(float temperature_c, float humidity_pct, uint16_t *raw_out)
 {
-    if (s_dev == NULL) return ESP_ERR_INVALID_STATE;
-    if (raw_out == NULL) return ESP_ERR_INVALID_ARG;
+    if (s_dev == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (raw_out == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
-    /* measure_raw_signal: CMD (2) + RH_word+CRC (3) + T_word+CRC (3) = 8 bytes */
-    uint16_t rh   = encode_rh(humidity_pct);
-    uint16_t temp = encode_temp(temperature_c);
-    uint8_t  rh_b[2]   = {rh >> 8,   rh & 0xFF};
-    uint8_t  temp_b[2] = {temp >> 8, temp & 0xFF};
+    /* measure_raw_signal: CMD(2) + RH_word+CRC(3) + T_word+CRC(3) = 8 bytes */
+    uint16_t rh_ticks   = encode_rh(humidity_pct);
+    uint16_t temp_ticks = encode_temp(temperature_c);
+
+    uint8_t rh_b[2]   = {(uint8_t)(rh_ticks >> 8), (uint8_t)(rh_ticks & 0xFF)};
+    uint8_t temp_b[2] = {(uint8_t)(temp_ticks >> 8), (uint8_t)(temp_ticks & 0xFF)};
 
     uint8_t buf[8] = {
-        CMD_MEASURE_RAW >> 8, CMD_MEASURE_RAW & 0xFF,
-        rh_b[0], rh_b[1], crc8(rh_b, 2),
-        temp_b[0], temp_b[1], crc8(temp_b, 2),
+        (uint8_t)(CMD_MEASURE_RAW >> 8),
+        (uint8_t)(CMD_MEASURE_RAW & 0xFF),
+        rh_b[0],
+        rh_b[1],
+        crc8(rh_b, 2),
+        temp_b[0],
+        temp_b[1],
+        crc8(temp_b, 2),
     };
 
     esp_err_t err = i2c_master_transmit(s_dev, buf, sizeof(buf), I2C_TIMEOUT_MS);
-    if (err != ESP_OK) return err;
+    if (err != ESP_OK) {
+        return err;
+    }
 
-    vTaskDelay(pdMS_TO_TICKS(30));   /* max measurement time per datasheet */
+    vTaskDelay(pdMS_TO_TICKS(30)); /* max measurement time per datasheet */
 
-    uint16_t raw;
-    err = read_words(&raw, 1);
-    if (err != ESP_OK) return err;
-
-    *raw_out = raw;
-    return ESP_OK;
+    return read_words(raw_out, 1);
 }

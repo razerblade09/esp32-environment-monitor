@@ -20,24 +20,24 @@
 static const char *TAG = "bme280";
 
 /* ── Register map ───────────────────────────────────────────────────────── */
-#define REG_CALIB_00   0x88   /* T1-P9 calibration block start             */
-#define REG_CHIP_ID    0xD0   /* Should read 0x60                          */
-#define REG_RESET      0xE0   /* Write 0xB6 to soft-reset                  */
-#define REG_CALIB_H1   0xA1   /* dig_H1                                    */
-#define REG_CALIB_H2   0xE1   /* dig_H2-H6 block start                     */
-#define REG_CTRL_HUM   0xF2   /* Humidity oversampling; write before F4    */
-#define REG_STATUS     0xF3
-#define REG_CTRL_MEAS  0xF4   /* Temp/pressure oversampling + mode         */
-#define REG_CONFIG     0xF5
-#define REG_PRESS_MSB  0xF7   /* Raw data block start (6 bytes T+P, 2 H)   */
+#define REG_CALIB_00  0x88 /* T1-P9 calibration block start          */
+#define REG_CHIP_ID   0xD0 /* Should read 0x60                       */
+#define REG_RESET     0xE0 /* Write 0xB6 to soft-reset               */
+#define REG_CALIB_H1  0xA1 /* dig_H1                                 */
+#define REG_CALIB_H2  0xE1 /* dig_H2-H6 block start                  */
+#define REG_CTRL_HUM  0xF2 /* Humidity oversampling; write before F4 */
+#define REG_STATUS    0xF3
+#define REG_CTRL_MEAS 0xF4 /* Temp/pressure oversampling + mode      */
+#define REG_CONFIG    0xF5
+#define REG_PRESS_MSB 0xF7 /* Raw data block start (6 bytes T+P, 2H) */
 
 #define CHIP_ID_BME280 0x60
 
-/* Oversampling ×1 for all three quantities, forced mode (bits [1:0] = 01) */
-#define CTRL_HUM_OSRS_H1   0x01   /* osrs_h = 001 */
-#define CTRL_MEAS_FORCED   0x27   /* osrs_t=001, osrs_p=001, mode=01       */
+/* Oversampling x1 for all three quantities, forced mode (bits [1:0] = 01) */
+#define CTRL_HUM_OSRS_H1 0x01 /* osrs_h = 001                        */
+#define CTRL_MEAS_FORCED 0x27 /* osrs_t=001, osrs_p=001, mode=01     */
 
-#define I2C_TIMEOUT_MS  50
+#define I2C_TIMEOUT_MS 50
 
 /* ── Calibration data ───────────────────────────────────────────────────── */
 typedef struct {
@@ -64,8 +64,8 @@ typedef struct {
     int8_t   dig_H6;
 } bme280_calib_t;
 
-static i2c_master_dev_handle_t s_dev  = NULL;
-static bme280_calib_t          s_calib;
+static i2c_master_dev_handle_t s_dev = NULL;
+static bme280_calib_t s_calib;
 
 /* ── Low-level I2C helpers ──────────────────────────────────────────────── */
 
@@ -90,18 +90,18 @@ static esp_err_t read_calibration(void)
     esp_err_t err = reg_read(REG_CALIB_00, buf, 24);
     if (err != ESP_OK) return err;
 
-    s_calib.dig_T1 = (uint16_t)(buf[1]  << 8 | buf[0]);
-    s_calib.dig_T2 = (int16_t) (buf[3]  << 8 | buf[2]);
-    s_calib.dig_T3 = (int16_t) (buf[5]  << 8 | buf[4]);
-    s_calib.dig_P1 = (uint16_t)(buf[7]  << 8 | buf[6]);
-    s_calib.dig_P2 = (int16_t) (buf[9]  << 8 | buf[8]);
-    s_calib.dig_P3 = (int16_t) (buf[11] << 8 | buf[10]);
-    s_calib.dig_P4 = (int16_t) (buf[13] << 8 | buf[12]);
-    s_calib.dig_P5 = (int16_t) (buf[15] << 8 | buf[14]);
-    s_calib.dig_P6 = (int16_t) (buf[17] << 8 | buf[16]);
-    s_calib.dig_P7 = (int16_t) (buf[19] << 8 | buf[18]);
-    s_calib.dig_P8 = (int16_t) (buf[21] << 8 | buf[20]);
-    s_calib.dig_P9 = (int16_t) (buf[23] << 8 | buf[22]);
+    s_calib.dig_T1 = (uint16_t)(buf[1] << 8 | buf[0]);
+    s_calib.dig_T2 = (int16_t)(buf[3] << 8 | buf[2]);
+    s_calib.dig_T3 = (int16_t)(buf[5] << 8 | buf[4]);
+    s_calib.dig_P1 = (uint16_t)(buf[7] << 8 | buf[6]);
+    s_calib.dig_P2 = (int16_t)(buf[9] << 8 | buf[8]);
+    s_calib.dig_P3 = (int16_t)(buf[11] << 8 | buf[10]);
+    s_calib.dig_P4 = (int16_t)(buf[13] << 8 | buf[12]);
+    s_calib.dig_P5 = (int16_t)(buf[15] << 8 | buf[14]);
+    s_calib.dig_P6 = (int16_t)(buf[17] << 8 | buf[16]);
+    s_calib.dig_P7 = (int16_t)(buf[19] << 8 | buf[18]);
+    s_calib.dig_P8 = (int16_t)(buf[21] << 8 | buf[20]);
+    s_calib.dig_P9 = (int16_t)(buf[23] << 8 | buf[22]);
 
     /* dig_H1 sits alone at 0xA1 */
     err = reg_read(REG_CALIB_H1, buf, 1);
@@ -174,12 +174,10 @@ esp_err_t bme280_init(void)
     if (s_dev != NULL) {
         return ESP_ERR_INVALID_STATE;
     }
-
-    /* Register device on the shared bus */
     const i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address  = BOARD_I2C_ADDR_BME280,
-        .scl_speed_hz    = 400000,
+        .device_address = BOARD_I2C_ADDR_BME280,
+        .scl_speed_hz = 400000,
     };
     esp_err_t err = i2c_master_bus_add_device(i2c_bus_get(), &dev_cfg, &s_dev);
     if (err != ESP_OK) {

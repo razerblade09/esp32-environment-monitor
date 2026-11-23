@@ -25,12 +25,12 @@
 
 static const char *TAG = "pms5003";
 
-#define UART_PORT     UART_NUM_2
-#define UART_BAUD     9600
-#define FRAME_LEN     32
-#define START1        0x42
-#define START2        0x4D
-#define RX_BUF_SIZE   256
+#define UART_PORT    UART_NUM_2
+#define UART_BAUD    9600
+#define FRAME_LEN    32
+#define START1       0x42
+#define START2       0x4D
+#define RX_BUF_SIZE  256
 
 esp_err_t pms5003_init(void)
 {
@@ -66,32 +66,43 @@ esp_err_t pms5003_init(void)
 
 esp_err_t pms5003_read(pms5003_data_t *out, uint32_t timeout_ms)
 {
-    if (out == NULL) return ESP_ERR_INVALID_ARG;
+    if (out == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
-    uint8_t  buf[FRAME_LEN];
-    uint32_t remaining_ms = timeout_ms;
+    uint8_t buf[FRAME_LEN];
 
-    while (remaining_ms > 0) {
-        /* Scan for start byte 1 */
+    while (timeout_ms > 0) {
+        /* Scan for start byte 1 — this call enforces the outer timeout */
         uint8_t b = 0;
-        int n = uart_read_bytes(UART_PORT, &b, 1, pdMS_TO_TICKS(remaining_ms));
-        if (n <= 0) break;
-        if (b != START1) continue;
+        int n = uart_read_bytes(UART_PORT, &b, 1, pdMS_TO_TICKS(timeout_ms));
+        if (n <= 0) {
+            break; /* timeout elapsed */
+        }
+        if (b != START1) {
+            continue;
+        }
 
         /* Start byte 2 */
         n = uart_read_bytes(UART_PORT, &b, 1, pdMS_TO_TICKS(100));
-        if (n <= 0 || b != START2) continue;
+        if (n <= 0 || b != START2) {
+            continue;
+        }
 
         buf[0] = START1;
         buf[1] = START2;
 
         /* Read the remaining 30 bytes */
         n = uart_read_bytes(UART_PORT, &buf[2], FRAME_LEN - 2, pdMS_TO_TICKS(200));
-        if (n != FRAME_LEN - 2) continue;
+        if (n != FRAME_LEN - 2) {
+            continue;
+        }
 
         /* Verify checksum: sum of bytes [0..29] must equal bytes [30..31] */
         uint16_t checksum = 0;
-        for (int i = 0; i < 30; i++) checksum += buf[i];
+        for (int i = 0; i < 30; i++) {
+            checksum += buf[i];
+        }
         uint16_t received = (uint16_t)(buf[30] << 8 | buf[31]);
         if (checksum != received) {
             ESP_LOGW(TAG, "checksum mismatch (calc 0x%04X, got 0x%04X)", checksum, received);
@@ -101,7 +112,7 @@ esp_err_t pms5003_read(pms5003_data_t *out, uint32_t timeout_ms)
         /* Extract atmospheric PM values (bytes 10-15) */
         out->pm1_0_ug_m3 = (uint16_t)(buf[10] << 8 | buf[11]);
         out->pm2_5_ug_m3 = (uint16_t)(buf[12] << 8 | buf[13]);
-        out->pm10_ug_m3  = (uint16_t)(buf[14] << 8 | buf[15]);
+        out->pm10_ug_m3 = (uint16_t)(buf[14] << 8 | buf[15]);
         return ESP_OK;
     }
 

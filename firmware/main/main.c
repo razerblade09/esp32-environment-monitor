@@ -13,7 +13,6 @@
  */
 
 #include <stdio.h>
-#include <stdint.h>
 
 #include "board_pins.h"
 #include "esp_log.h"

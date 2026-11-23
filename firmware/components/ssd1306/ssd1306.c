@@ -19,14 +19,14 @@
 
 static const char *TAG = "ssd1306";
 
-#define OLED_WIDTH       128
-#define OLED_PAGES       8     /* 64 px / 8 px per page */
-#define CHARS_PER_ROW    16    /* 128 px / 8 px per char */
-#define I2C_TIMEOUT_MS   50
+#define OLED_WIDTH    128
+#define OLED_PAGES    8   /* 64 px / 8 px per page */
+#define CHARS_PER_ROW 16  /* 128 px / 8 px per char */
+#define I2C_TIMEOUT_MS 50
 
-/* Co=0, D/C#=0 → command stream; Co=0, D/C#=1 → data stream */
-#define CTRL_CMD   0x00
-#define CTRL_DATA  0x40
+/* Co=0, D/C#=0 -> command stream; Co=0, D/C#=1 -> data stream */
+#define CTRL_CMD  0x00
+#define CTRL_DATA 0x40
 
 static i2c_master_dev_handle_t s_dev = NULL;
 
