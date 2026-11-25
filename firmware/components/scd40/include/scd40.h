@@ -19,9 +19,9 @@ extern "C" {
 
 /** Measurement result returned by scd40_measure(). */
 typedef struct {
-    uint16_t co2_ppm;       /**< CO2 concentration in parts-per-million. */
-    float    temperature_c; /**< On-chip temperature in degrees Celsius.  */
-    float    humidity_pct;  /**< Relative humidity in percent.            */
+    uint16_t co2_ppm;    /**< CO2 concentration in parts-per-million. */
+    float temperature_c; /**< On-chip temperature in degrees Celsius.  */
+    float humidity_pct;  /**< Relative humidity in percent.            */
 } scd40_data_t;
 
 /**

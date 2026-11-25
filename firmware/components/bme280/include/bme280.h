@@ -6,7 +6,8 @@
  * once after i2c_bus_init(), then bme280_read() as often as needed.
  *
  * Hardware: BME280 at I2C address 0x76 (SDO tied to GND on this board).
- * Datasheet: https://www.bosch-sensortec.com/products/environmental-sensors/humidity-sensors-bme280/
+ * Datasheet:
+ * https://www.bosch-sensortec.com/products/environmental-sensors/humidity-sensors-bme280/
  */
 #pragma once
 
@@ -18,9 +19,9 @@ extern "C" {
 
 /** Measurement result returned by bme280_read(). */
 typedef struct {
-    float temperature_c;  /**< Temperature in degrees Celsius. */
-    float pressure_hpa;   /**< Pressure in hectopascals (hPa). */
-    float humidity_pct;   /**< Relative humidity in percent (0–100). */
+    float temperature_c; /**< Temperature in degrees Celsius. */
+    float pressure_hpa;  /**< Pressure in hectopascals (hPa). */
+    float humidity_pct;  /**< Relative humidity in percent (0–100). */
 } bme280_data_t;
 
 /**

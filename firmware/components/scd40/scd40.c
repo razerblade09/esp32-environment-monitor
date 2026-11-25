@@ -114,8 +114,7 @@ esp_err_t scd40_init(void)
     /* Stop any running periodic measurement (required before single-shot) */
     err = send_cmd(CMD_STOP_PERIODIC);
     if (err != ESP_OK) {
-        ESP_LOGW(TAG, "stop_periodic failed (may not have been running): %s",
-                 esp_err_to_name(err));
+        ESP_LOGW(TAG, "stop_periodic failed (may not have been running): %s", esp_err_to_name(err));
     }
     vTaskDelay(pdMS_TO_TICKS(500)); /* datasheet: 500 ms after stop */
 

@@ -70,8 +70,8 @@ static esp_err_t read_words(uint16_t *words, size_t n)
         uint8_t *w = &buf[i * BYTES_PER_WORD];
         uint8_t expected = crc8(w, 2);
         if (w[2] != expected) {
-            ESP_LOGE(TAG, "CRC error on word %u (got 0x%02X, expected 0x%02X)", (unsigned)i,
-                     w[2], expected);
+            ESP_LOGE(TAG, "CRC error on word %u (got 0x%02X, expected 0x%02X)", (unsigned)i, w[2],
+                     expected);
             return ESP_ERR_INVALID_CRC;
         }
         words[i] = (uint16_t)(w[0] << 8 | w[1]);
@@ -153,10 +153,10 @@ esp_err_t sgp40_measure_raw(float temperature_c, float humidity_pct, uint16_t *r
     }
 
     /* measure_raw_signal: CMD(2) + RH_word+CRC(3) + T_word+CRC(3) = 8 bytes */
-    uint16_t rh_ticks   = encode_rh(humidity_pct);
+    uint16_t rh_ticks = encode_rh(humidity_pct);
     uint16_t temp_ticks = encode_temp(temperature_c);
 
-    uint8_t rh_b[2]   = {(uint8_t)(rh_ticks >> 8), (uint8_t)(rh_ticks & 0xFF)};
+    uint8_t rh_b[2] = {(uint8_t)(rh_ticks >> 8), (uint8_t)(rh_ticks & 0xFF)};
     uint8_t temp_b[2] = {(uint8_t)(temp_ticks >> 8), (uint8_t)(temp_ticks & 0xFF)};
 
     uint8_t buf[8] = {
