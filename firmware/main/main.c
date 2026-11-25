@@ -49,9 +49,7 @@ static bool init_check(esp_err_t err, const char *name)
  * Row 6:  "PM2.5:  12 ug/m3"                                                *
  * Row 7:  "PM10:   15 ug/m3"                                                */
 
-static void display_readings(const bme280_data_t *bme,
-                             uint16_t voc_raw,
-                             const scd40_data_t  *scd,
+static void display_readings(const bme280_data_t *bme, uint16_t voc_raw, const scd40_data_t *scd,
                              const pms5003_data_t *pms)
 {
     /* Scratch buffer sized for the widest possible output so the compiler can
@@ -87,13 +85,14 @@ void app_main(void)
     ESP_LOGI(TAG, "=== ESP32 Environmental Monitor ===");
 
     /* I2C bus — must come before all I2C sensors */
-    if (!init_check(i2c_bus_init(), "I2C bus")) return;
+    if (!init_check(i2c_bus_init(), "I2C bus"))
+        return;
 
     /* Sensors & display */
-    bool bme_ok  = init_check(bme280_init(),  "BME280");
-    bool sgp_ok  = init_check(sgp40_init(),   "SGP40");
-    bool scd_ok  = init_check(scd40_init(),   "SCD40");
-    bool pms_ok  = init_check(pms5003_init(), "PMS5003");
+    bool bme_ok = init_check(bme280_init(), "BME280");
+    bool sgp_ok = init_check(sgp40_init(), "SGP40");
+    bool scd_ok = init_check(scd40_init(), "SCD40");
+    bool pms_ok = init_check(pms5003_init(), "PMS5003");
     bool oled_ok = init_check(ssd1306_init(), "SSD1306");
 
     if (oled_ok) {
@@ -106,10 +105,10 @@ void app_main(void)
     }
 
     /* ── Main measurement loop ──────────────────────────────────────────── */
-    bme280_data_t  bme  = {0};
-    scd40_data_t   scd  = {0};
-    pms5003_data_t pms  = {0};
-    uint16_t       voc  = 0;
+    bme280_data_t bme = {0};
+    scd40_data_t scd = {0};
+    pms5003_data_t pms = {0};
+    uint16_t voc = 0;
 
     while (true) {
 
@@ -117,8 +116,8 @@ void app_main(void)
         if (bme_ok) {
             esp_err_t err = bme280_read(&bme);
             if (err == ESP_OK) {
-                ESP_LOGI(TAG, "BME280  T=%.2f C  H=%.2f%%  P=%.2f hPa",
-                         bme.temperature_c, bme.humidity_pct, bme.pressure_hpa);
+                ESP_LOGI(TAG, "BME280  T=%.2f C  H=%.2f%%  P=%.2f hPa", bme.temperature_c,
+                         bme.humidity_pct, bme.pressure_hpa);
             } else {
                 ESP_LOGW(TAG, "BME280 read failed: %s", esp_err_to_name(err));
             }
@@ -138,8 +137,8 @@ void app_main(void)
         if (scd_ok) {
             esp_err_t err = scd40_measure(&scd);
             if (err == ESP_OK) {
-                ESP_LOGI(TAG, "SCD40   CO2=%u ppm  T=%.2f C  H=%.2f%%",
-                         scd.co2_ppm, scd.temperature_c, scd.humidity_pct);
+                ESP_LOGI(TAG, "SCD40   CO2=%u ppm  T=%.2f C  H=%.2f%%", scd.co2_ppm,
+                         scd.temperature_c, scd.humidity_pct);
             } else {
                 ESP_LOGW(TAG, "SCD40 read failed: %s", esp_err_to_name(err));
             }
@@ -151,8 +150,8 @@ void app_main(void)
         if (pms_ok) {
             esp_err_t err = pms5003_read(&pms, 2000);
             if (err == ESP_OK) {
-                ESP_LOGI(TAG, "PMS5003 PM1.0=%u  PM2.5=%u  PM10=%u  (ug/m3)",
-                         pms.pm1_0_ug_m3, pms.pm2_5_ug_m3, pms.pm10_ug_m3);
+                ESP_LOGI(TAG, "PMS5003 PM1.0=%u  PM2.5=%u  PM10=%u  (ug/m3)", pms.pm1_0_ug_m3,
+                         pms.pm2_5_ug_m3, pms.pm10_ug_m3);
             } else {
                 ESP_LOGW(TAG, "PMS5003 read failed: %s", esp_err_to_name(err));
             }

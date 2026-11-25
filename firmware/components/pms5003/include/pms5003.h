@@ -19,9 +19,9 @@ extern "C" {
 
 /** PM concentration readings (atmospheric environment values). */
 typedef struct {
-    uint16_t pm1_0_ug_m3;   /**< PM1.0  concentration in µg/m³. */
-    uint16_t pm2_5_ug_m3;   /**< PM2.5  concentration in µg/m³. */
-    uint16_t pm10_ug_m3;    /**< PM10.0 concentration in µg/m³. */
+    uint16_t pm1_0_ug_m3; /**< PM1.0  concentration in µg/m³. */
+    uint16_t pm2_5_ug_m3; /**< PM2.5  concentration in µg/m³. */
+    uint16_t pm10_ug_m3;  /**< PM10.0 concentration in µg/m³. */
 } pms5003_data_t;
 
 /**

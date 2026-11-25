@@ -25,21 +25,21 @@
 
 static const char *TAG = "pms5003";
 
-#define UART_PORT    UART_NUM_2
-#define UART_BAUD    9600
-#define FRAME_LEN    32
-#define START1       0x42
-#define START2       0x4D
-#define RX_BUF_SIZE  256
+#define UART_PORT   UART_NUM_2
+#define UART_BAUD   9600
+#define FRAME_LEN   32
+#define START1      0x42
+#define START2      0x4D
+#define RX_BUF_SIZE 256
 
 esp_err_t pms5003_init(void)
 {
     const uart_config_t cfg = {
-        .baud_rate  = UART_BAUD,
-        .data_bits  = UART_DATA_8_BITS,
-        .parity     = UART_PARITY_DISABLE,
-        .stop_bits  = UART_STOP_BITS_1,
-        .flow_ctrl  = UART_HW_FLOWCTRL_DISABLE,
+        .baud_rate = UART_BAUD,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .source_clk = UART_SCLK_DEFAULT,
     };
 
@@ -49,18 +49,18 @@ esp_err_t pms5003_init(void)
         return err;
     }
     err = uart_param_config(UART_PORT, &cfg);
-    if (err != ESP_OK) return err;
+    if (err != ESP_OK)
+        return err;
 
-    err = uart_set_pin(UART_PORT,
-                       BOARD_PMS_TX_GPIO,  /* ESP32 TX → PMS5003 RX */
-                       BOARD_PMS_RX_GPIO,  /* ESP32 RX ← PMS5003 TX */
-                       UART_PIN_NO_CHANGE,
-                       UART_PIN_NO_CHANGE);
-    if (err != ESP_OK) return err;
+    err = uart_set_pin(UART_PORT, BOARD_PMS_TX_GPIO, /* ESP32 TX → PMS5003 RX */
+                       BOARD_PMS_RX_GPIO,            /* ESP32 RX ← PMS5003 TX */
+                       UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    if (err != ESP_OK)
+        return err;
 
     uart_flush(UART_PORT);
-    ESP_LOGI(TAG, "init OK (UART%d, TX=%d, RX=%d, %d baud)",
-             UART_PORT, BOARD_PMS_TX_GPIO, BOARD_PMS_RX_GPIO, UART_BAUD);
+    ESP_LOGI(TAG, "init OK (UART%d, TX=%d, RX=%d, %d baud)", UART_PORT, BOARD_PMS_TX_GPIO,
+             BOARD_PMS_RX_GPIO, UART_BAUD);
     return ESP_OK;
 }
 
