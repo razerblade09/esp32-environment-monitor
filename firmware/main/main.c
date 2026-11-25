@@ -54,7 +54,10 @@ static void display_readings(const bme280_data_t *bme,
                              const scd40_data_t  *scd,
                              const pms5003_data_t *pms)
 {
-    char line[17];  /* 16 chars + null */
+    /* Scratch buffer sized for the widest possible output so the compiler can
+     * prove snprintf never truncates. ssd1306_write_line() clips to the 16
+     * characters that fit on a row and blanks the rest of the row. */
+    char line[32];
 
     snprintf(line, sizeof(line), "Tmp: %.1f C     ", bme->temperature_c);
     ssd1306_write_line(1, line);
