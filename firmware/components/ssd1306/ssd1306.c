@@ -155,7 +155,7 @@ static const uint8_t INIT_CMDS[] = {
     0xD3, 0x00, /* display offset = 0                 */
     0x40,       /* start line = 0                     */
     0x8D, 0x14, /* charge pump enable                 */
-    0x20, 0x00, /* memory addressing mode: horizontal */
+    0x20, 0x02, /* memory addressing mode: page      */
     0xA1,       /* segment remap (flip horizontally)  */
     0xC8,       /* COM scan direction remapped        */
     0xDA, 0x12, /* COM pins hardware config           */
