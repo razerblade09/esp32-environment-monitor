@@ -35,7 +35,7 @@ static const char *TAG = "bme280";
 
 /* Oversampling x1 for all three quantities, forced mode (bits [1:0] = 01) */
 #define CTRL_HUM_OSRS_H1 0x01 /* osrs_h = 001                        */
-#define CTRL_MEAS_FORCED 0x27 /* osrs_t=001, osrs_p=001, mode=01     */
+#define CTRL_MEAS_FORCED 0x25 /* osrs_t=001, osrs_p=001, mode=01     */
 
 #define I2C_TIMEOUT_MS 50
 
