@@ -5,8 +5,10 @@
  * SCD40 protocol: 2-byte command, optional data words each with CRC-8.
  * CRC polynomial: 0x31, init: 0xFF — same as SGP40 / most Sensirion sensors.
  *
- * We use measure_single_shot (0x219D) so the sensor is only powered up during
- * a measurement. Each call blocks for ~5 s while the SCD40 warms up and reads.
+ * The SCD40 only supports periodic measurement (one sample every ~5 s). The
+ * single-shot commands (0x219D, 0x2196) exist only on the SCD41 and are NACKed
+ * by the SCD40. scd40_init() starts periodic mode; scd40_measure() waits for
+ * the next sample using get_data_ready_status, then reads it.
  */
 
 #include "scd40.h"
@@ -21,13 +23,16 @@
 static const char *TAG = "scd40";
 
 /* Commands */
+#define CMD_START_PERIODIC   0x21B1 /* start_periodic_measurement     */
 #define CMD_STOP_PERIODIC    0x3F86 /* stop_periodic_measurement      */
-#define CMD_MEASURE_SINGLE   0x219D /* measure_single_shot (~5 s)     */
 #define CMD_READ_MEASUREMENT 0xEC05 /* read_measurement (3 words)     */
+#define CMD_DATA_READY       0xE4B8 /* get_data_ready_status (1 word) */
 #define CMD_GET_SERIAL       0x3682 /* get_serial_number (3 words)    */
 
-#define SINGLE_SHOT_MS 5000 /* datasheet max measurement time */
-#define I2C_TIMEOUT_MS 50
+#define DATA_READY_MASK    0x07FF /* least significant 11 bits == 0 -> not ready */
+#define POLL_INTERVAL_MS   200
+#define MEASURE_TIMEOUT_MS 7000 /* period is ~5 s; allow margin for first sample */
+#define I2C_TIMEOUT_MS     50
 
 /* Fixed buffer sized for the largest SCD40 response: 3 words × 3 bytes */
 #define MAX_RESPONSE_WORDS 3
@@ -111,7 +116,7 @@ esp_err_t scd40_init(void)
         return err;
     }
 
-    /* Stop any running periodic measurement (required before single-shot) */
+    /* Stop any running measurement (the sensor ignores most commands while measuring) */
     err = send_cmd(CMD_STOP_PERIODIC);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "stop_periodic failed (may not have been running): %s", esp_err_to_name(err));
@@ -126,6 +131,12 @@ esp_err_t scd40_init(void)
         goto fail;
     }
     ESP_LOGI(TAG, "init OK (serial 0x%04X%04X%04X)", serial[0], serial[1], serial[2]);
+
+    err = send_cmd(CMD_START_PERIODIC);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "start_periodic failed: %s", esp_err_to_name(err));
+        goto fail;
+    }
     return ESP_OK;
 
 fail:
@@ -143,23 +154,33 @@ esp_err_t scd40_measure(scd40_data_t *out)
         return ESP_ERR_INVALID_ARG;
     }
 
-    /* Trigger single-shot measurement */
-    esp_err_t err = send_cmd(CMD_MEASURE_SINGLE);
+    /* Poll until a new sample is available (SCD40 produces one every ~5 s) */
+    esp_err_t err = ESP_ERR_TIMEOUT;
+    for (uint32_t waited = 0; waited < MEASURE_TIMEOUT_MS; waited += POLL_INTERVAL_MS) {
+        uint16_t status = 0;
+        err = cmd_then_read(CMD_DATA_READY, &status, 1, 1);
+        if (err != ESP_OK) {
+            return err;
+        }
+        if ((status & DATA_READY_MASK) != 0) {
+            err = ESP_OK;
+            break;
+        }
+        err = ESP_ERR_TIMEOUT;
+        vTaskDelay(pdMS_TO_TICKS(POLL_INTERVAL_MS));
+    }
     if (err != ESP_OK) {
         return err;
     }
 
-    /* Wait for the measurement (datasheet: ~5 s max) */
-    vTaskDelay(pdMS_TO_TICKS(SINGLE_SHOT_MS));
-
-    /* Read 3 result words: CO2, raw_T, raw_RH */
+    /* Read 3 result words: CO2, raw_T, raw_RH. Reading clears the ready flag. */
     uint16_t words[3];
     err = cmd_then_read(CMD_READ_MEASUREMENT, words, 3, 1);
     if (err != ESP_OK) {
         return err;
     }
 
-    /* Convert per SCD40 datasheet §3.8 */
+    /* Convert per SCD40 datasheet */
     out->co2_ppm = words[0];
     out->temperature_c = -45.0f + 175.0f * (float)words[1] / 65535.0f;
     out->humidity_pct = 100.0f * (float)words[2] / 65535.0f;
