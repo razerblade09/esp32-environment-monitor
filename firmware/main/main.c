@@ -7,7 +7,7 @@
  *  2. Initialise all sensors and the OLED display.
  *  3. Loop forever: read all sensors, display results on OLED, log to console.
  *
- * SCD40 single-shot takes ~5 s, so the main loop period is ~5 s.
+ * The SCD40 produces one sample every ~5 s, so the main loop period is ~5 s.
  * BME280 and SGP40 readings are taken first; their temperature/humidity
  * values are passed to the SGP40 for humidity-compensated VOC measurement.
  */
