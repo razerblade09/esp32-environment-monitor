@@ -19,7 +19,7 @@
 static const char *TAG = "sgp40";
 
 /* Commands (big-endian 16-bit) */
-#define CMD_MEASURE_RAW 0x2600 /* measure_raw_signal          */
+#define CMD_MEASURE_RAW 0x260F /* measure_raw_signal          */
 #define CMD_SELF_TEST   0x280E /* execute_self_test (~320 ms) */
 
 #define SELF_TEST_OK   0xD400 /* expected result if test passes */
@@ -93,6 +93,10 @@ static uint16_t encode_rh(float rh_pct)
 
 static uint16_t encode_temp(float temp_c)
 {
+    if (temp_c < -45.0f)
+        temp_c = -45.0f;
+    if (temp_c > 130.0f)
+        temp_c = 130.0f;
     return (uint16_t)((temp_c + 45.0f) / 175.0f * 65535.0f + 0.5f);
 }
 
