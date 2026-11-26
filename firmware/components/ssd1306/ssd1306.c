@@ -31,7 +31,7 @@ static const char *TAG = "ssd1306";
 static i2c_master_dev_handle_t s_dev = NULL;
 
 /* ── Minimal 8×8 font (ASCII 0x20–0x7E, 95 glyphs) ─────────────────────── */
-/* Each character is 8 bytes, one byte per row, MSB = leftmost pixel.       */
+/* Each character is 8 bytes, one byte per row, LSB = leftmost pixel.       */
 static const uint8_t FONT8x8[][8] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /* 0x20 ' ' */
     {0x18, 0x3C, 0x3C, 0x18, 0x18, 0x00, 0x18, 0x00}, /* 0x21 '!' */
@@ -248,7 +248,7 @@ esp_err_t ssd1306_write_line(uint8_t row, const char *text)
         for (int px = 0; px < 8; px++) {
             uint8_t byte = 0;
             for (int row_bit = 0; row_bit < 8; row_bit++) {
-                if (glyph[row_bit] & (0x80 >> px)) {
+                if (glyph[row_bit] & (0x01 << px)) {
                     byte |= (1 << row_bit);
                 }
             }
