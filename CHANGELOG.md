@@ -15,6 +15,10 @@ All notable changes to this project are documented here.
 - `firmware/build.sh` (builds a single flashable image in `dist/`) and `firmware/flash.sh`
 - CI workflow: clang-format check and ESP-IDF firmware build
 - CONTRIBUTING.md with branch and commit conventions, EditorConfig
+- Firmware drivers for BME280, SCD40, SGP40, PMS5003 and SSD1306, and the main sampling loop (not yet tested on hardware)
+
+### Fixed
+- SCD40 driver uses periodic measurement; single-shot is SCD41-only
 
 ### Changed
 - SGP40 symbol reworked to the real 6-pin pinout (VDDH to +3V3, pin 4 to GND); reference is now U5

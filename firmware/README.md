@@ -1,6 +1,6 @@
 # Firmware
 
-**Status: In development.** Bring-up skeleton in place; sensor drivers are added one per pull request.
+**Status: In development.** Drivers for all sensors and the OLED are written and build in CI, but none has been run on real hardware yet.
 
 ## Toolchain
 
@@ -29,7 +29,12 @@ firmware/
 ├── main/                 # app_main: wires components together
 └── components/
     ├── board/            # GPIO map and I2C addresses (mirrors the schematic)
-    └── i2c_bus/          # shared I2C master bus + address probe
+    ├── i2c_bus/          # shared I2C master bus + address probe
+    ├── bme280/           # temperature, humidity, pressure
+    ├── scd40/            # CO2 (periodic measurement)
+    ├── sgp40/            # VOC raw signal
+    ├── pms5003/          # particulate matter UART frame parser
+    └── ssd1306/          # 128x64 OLED text output
 ```
 
 Rule: hardware access lives in components; `main/` only orchestrates.
@@ -37,10 +42,13 @@ Rule: hardware access lives in components; `main/` only orchestrates.
 ## Roadmap
 
 - [x] Project skeleton, pin map, I2C bus with boot-time device scan
-- [ ] BME280 driver (temperature, humidity, pressure)
-- [ ] SCD40 driver (CO2)
-- [ ] SGP40 driver (VOC)
-- [ ] PMS5003 UART frame parser
-- [ ] SSD1306 display output
-- [ ] Main sampling loop
+- [x] BME280 driver (temperature, humidity, pressure)
+- [x] SCD40 driver (CO2)
+- [x] SGP40 driver (VOC)
+- [x] PMS5003 UART frame parser
+- [x] SSD1306 display output
+- [x] Main sampling loop
+- [ ] Test every driver on real hardware
+- [ ] Discard PMS5003 readings during its ~30 s warm-up
+- [ ] VOC index from the SGP40 raw signal (currently raw ticks only)
 - [ ] (Optional) Wi-Fi telemetry / MQTT

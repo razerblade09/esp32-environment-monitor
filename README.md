@@ -2,7 +2,7 @@
 
 An ESP32-based custom PCB that measures and displays multiple environmental parameters — particulate matter, VOC, CO₂, temperature, humidity, and pressure — using dedicated sensors.
 
-> **Status:** Schematic complete (ERC: 1 known benign warning) · Footprint assignment in progress (SGP40 footprint pending) · PCB layout not started
+> **Status:** Schematic complete (ERC: 1 known benign warning) · Footprint assignment in progress (SGP40 footprint pending) · Firmware drivers written, not yet tested on hardware · PCB layout not started
 
 ---
 
@@ -136,7 +136,7 @@ esp32-environment-monitor/
 ├── docs/
 │   ├── images/             # Schematic PDF and screenshots
 │   └── datasheets/         # Component datasheets (add as needed)
-├── firmware/               # ESP32 firmware source (not started)
+├── firmware/               # ESP-IDF firmware (drivers written, untested on hardware)
 ├── Handover.txt            # Detailed project handover & AI context document
 ├── .gitignore
 ├── CHANGELOG.md
@@ -154,7 +154,7 @@ esp32-environment-monitor/
 | Schematic engineering review | ⏳ Pending | Verify PMS5003 SET/RESET, SCD40 unused pins, I²C pull-ups, power budget |
 | PCB layout | ⏳ Pending | Board shape, component placement, routing, DRC |
 | Manufacturing preparation | ⏳ Pending | Gerbers, drill files, BOM, pick-and-place |
-| Firmware development | ⏳ Pending | ESP32 sensor reading and display logic |
+| Firmware development | 🔄 In progress | Drivers for all sensors and the OLED, main loop; awaiting hardware to test |
 | Hardware bring-up | ⏳ Pending | Board inspection, rail verification, sensor testing |
 
 ---
