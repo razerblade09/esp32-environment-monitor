@@ -22,6 +22,8 @@
 #include "board_pins.h"
 #include "driver/uart.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static const char *TAG = "pms5003";
 
@@ -72,10 +74,23 @@ esp_err_t pms5003_read(pms5003_data_t *out, uint32_t timeout_ms)
 
     uint8_t buf[FRAME_LEN];
 
-    while (timeout_ms > 0) {
-        /* Scan for start byte 1 — this call enforces the outer timeout */
+    /* The sensor streams a frame every ~1 s but callers poll more slowly, so
+     * the RX buffer holds old frames. Drop them so we return a fresh reading. */
+    uart_flush_input(UART_PORT);
+
+    const TickType_t timeout_ticks = pdMS_TO_TICKS(timeout_ms);
+    const TickType_t start = xTaskGetTickCount();
+
+    while (true) {
+        /* One deadline for the whole call, including retries after a bad frame */
+        TickType_t elapsed = xTaskGetTickCount() - start;
+        if (elapsed >= timeout_ticks) {
+            break;
+        }
+
+        /* Scan for start byte 1 */
         uint8_t b = 0;
-        int n = uart_read_bytes(UART_PORT, &b, 1, pdMS_TO_TICKS(timeout_ms));
+        int n = uart_read_bytes(UART_PORT, &b, 1, timeout_ticks - elapsed);
         if (n <= 0) {
             break; /* timeout elapsed */
         }
