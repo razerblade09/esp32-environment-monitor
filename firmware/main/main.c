@@ -28,6 +28,9 @@
 
 static const char *TAG = "main";
 
+/* The PMS5003 needs ~30 s after power-on before its readings are stable. */
+#define PMS_WARMUP_MS 30000
+
 /* ── Helper: initialise one subsystem, log the result ───────────────────── */
 static bool init_check(esp_err_t err, const char *name)
 {
@@ -46,11 +49,11 @@ static bool init_check(esp_err_t err, const char *name)
  * Row 3:  "Pre: 1013 hPa"                                                   *
  * Row 4:  "VOC raw: 32768"                                                  *
  * Row 5:  "CO2: 450 ppm"                                                    *
- * Row 6:  "PM2.5:  12 ug/m3"                                                *
- * Row 7:  "PM10:   15 ug/m3"                                                */
+ * Row 6:  "PM2.5:  12 ug/m3"   ("PM2.5: warmup" for the first 30 s)         *
+ * Row 7:  "PM10:   15 ug/m3"   ("PM10:  warmup" for the first 30 s)         */
 
 static void display_readings(const bme280_data_t *bme, uint16_t voc_raw, const scd40_data_t *scd,
-                             const pms5003_data_t *pms)
+                             const pms5003_data_t *pms, bool pms_warm)
 {
     /* Scratch buffer sized for the widest possible output so the compiler can
      * prove snprintf never truncates. ssd1306_write_line() clips to the 16
@@ -72,11 +75,16 @@ static void display_readings(const bme280_data_t *bme, uint16_t voc_raw, const s
     snprintf(line, sizeof(line), "CO2: %u ppm   ", scd->co2_ppm);
     ssd1306_write_line(5, line);
 
-    snprintf(line, sizeof(line), "PM2.5: %3u ug/m3", pms->pm2_5_ug_m3);
-    ssd1306_write_line(6, line);
+    if (pms_warm) {
+        snprintf(line, sizeof(line), "PM2.5: %3u ug/m3", pms->pm2_5_ug_m3);
+        ssd1306_write_line(6, line);
 
-    snprintf(line, sizeof(line), "PM10:  %3u ug/m3", pms->pm10_ug_m3);
-    ssd1306_write_line(7, line);
+        snprintf(line, sizeof(line), "PM10:  %3u ug/m3", pms->pm10_ug_m3);
+        ssd1306_write_line(7, line);
+    } else {
+        ssd1306_write_line(6, "PM2.5: warmup   ");
+        ssd1306_write_line(7, "PM10:  warmup   ");
+    }
 }
 
 /* ── Application entry point ─────────────────────────────────────────────── */
@@ -109,8 +117,10 @@ void app_main(void)
     scd40_data_t scd = {0};
     pms5003_data_t pms = {0};
     uint16_t voc = 0;
+    const TickType_t pms_started = xTaskGetTickCount();
 
     while (true) {
+        bool pms_warm = (xTaskGetTickCount() - pms_started) >= pdMS_TO_TICKS(PMS_WARMUP_MS);
 
         /* BME280 — temperature, humidity, pressure */
         if (bme_ok) {
@@ -149,7 +159,9 @@ void app_main(void)
         /* PMS5003 — particulate matter */
         if (pms_ok) {
             esp_err_t err = pms5003_read(&pms, 2000);
-            if (err == ESP_OK) {
+            if (err == ESP_OK && !pms_warm) {
+                ESP_LOGI(TAG, "PMS5003 warming up, ignoring reading");
+            } else if (err == ESP_OK) {
                 ESP_LOGI(TAG, "PMS5003 PM1.0=%u  PM2.5=%u  PM10=%u  (ug/m3)", pms.pm1_0_ug_m3,
                          pms.pm2_5_ug_m3, pms.pm10_ug_m3);
             } else {
@@ -159,7 +171,7 @@ void app_main(void)
 
         /* Update OLED */
         if (oled_ok) {
-            display_readings(&bme, voc, &scd, &pms);
+            display_readings(&bme, voc, &scd, &pms, pms_warm);
         }
     }
 }
