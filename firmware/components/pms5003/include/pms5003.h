@@ -34,8 +34,12 @@ esp_err_t pms5003_init(void);
 /**
  * @brief Read one complete 32-byte data frame from the sensor.
  *
- * Blocks until a valid frame arrives or the timeout elapses.
+ * Discards any frames already buffered, then blocks until a newly received
+ * valid frame arrives or the timeout elapses (timeout covers retries too).
  * The PMS5003 normally sends a frame every ~1 s in active mode.
+ *
+ * Note: the sensor needs ~30 s after power-on before readings are stable;
+ * the caller is responsible for ignoring data during that warm-up.
  *
  * @param out         Pointer to pms5003_data_t to fill.
  * @param timeout_ms  Maximum wait time in milliseconds (recommend ≥ 2000).
